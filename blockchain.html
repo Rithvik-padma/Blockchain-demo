@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js" integrity="sha512-nOQuvD9nKirvxDdvQ9OMqe2dgapbPB7vYAMrzJihw5m+aNcf0dX53m6YxM4LgA9u8e9eg9QX+/+mPu8kCNpV2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Chivo+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+    body,html{
+        width: 100%;
+        height: 100%;
+        margin: 0;
+    }
+    .blockchain{
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        font-family: 'Chivo Mono';
+        font-size: 14px;
+    }
+    .block{
+        margin: 10px 15px;
+        width: 320px;
+        text-align: center;
+        line-height: 30px;
+        padding: 12px 20px 20px 20px;
+        background-color: rgb(223, 240, 216);
+        border-radius: 7px;
+    }
+    .sec{
+        display: flex;
+        justify-content: space-between;
+        margin: 16px 0;
+    }
+    input{
+        width: 197px;
+        height: 25px;
+        padding-left: 5px;
+    }
+    .mine{
+        width: 60px;
+        padding: 7px 0;
+        border: none;
+        border-radius: 5px;
+        background: linear-gradient(to bottom, #0081BF, #13005A);
+        color: white;
+        font-family: 'Montserrat';
+        font-size: 12px;
+        margin: 2.5px 0;
+    }
+    .mine:active{
+        opacity: 0.77;
+        transform: scale(0.97);
+    }
+
+</style>
+<body>
+<div class="blockchain">
+    <div class="block" id="1">
+        <div class="number-sec sec">
+            <label>Block:</label>
+            <input type="number" disabled>
+        </div>
+        <div class="nonce-sec sec">
+            <label>Nonce:</label>
+            <input type="text" disabled>
+        </div>
+        <div class="data-sec sec ">
+            <label>TX Data:</label>
+            <textarea name="" id="" cols="25" rows="5" style="padding-left: 5px; padding-top: 5px;"></textarea>
+        </div>
+        <div class="prevHash-sec sec">
+            <label>Prev Hash:</label>
+            <input type="text" disabled>
+        </div>
+        <div class="hash-sec sec">
+            <label>Block Hash:</label>
+            <input type="text" disabled>
+        </div>
+        <button class="mine">Mine</button>
+    </div>
+</div>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded',()=>{
+    let difficulty = 2;
+    let blockNum = 0;
+    let blockchain = [];
+    let block = document.querySelector('.block');
+    let chain = document.querySelector('.blockchain');
+    
+
+    function cryptohash(...inputs){
+        return CryptoJS.SHA256(inputs.join(''));
+    }
+    
+    class Block{
+        constructor({number, nonce, data, prevHash, hash}){
+            this.number = number;
+            this.nonce = nonce;
+            this.data = data;
+            this.prevHash = prevHash;
+            this.hash = hash;
+        }
+
+        static genesis(){
+            let number = ++blockNum;
+            let nonce = 0;
+            let data = '';
+            let prevHash = '0'.repeat(64);
+            let GENESIS_BLOCK = new Block({
+                number,
+                nonce,
+                data,
+                prevHash,
+                hash: cryptohash(number, nonce, data, prevHash)
+            });
+            block.querySelector('.number-sec input').value = GENESIS_BLOCK.number;
+            block.querySelector('.nonce-sec input').value = GENESIS_BLOCK.nonce;
+            block.querySelector('.data-sec textarea').value = GENESIS_BLOCK.data;
+            block.querySelector('.prevHash-sec input').value = GENESIS_BLOCK.prevHash;
+            block.querySelector('.hash-sec input').value = GENESIS_BLOCK.hash;
+            return new this(GENESIS_BLOCK);
+        }
+
+        static randomNonce(number, data, prevHash){
+            let nonce = 0;
+            do{
+                nonce++;
+            }
+            while(cryptohash(number, nonce, data, prevHash).toString().substring(0,difficulty) !== '0'.repeat(difficulty));
+            return nonce;
+        }
+
+        static mineBlock(){
+
+        }
+    }
+
+    class Blockchain{
+        static addBlock(){
+            let number = ++blockNum;
+            let data = '';
+            let prevHash = blockchain[blockchain.length-1].hash;
+            let nonce = Block.randomNonce(number, data, prevHash);
+            let NEW_BLOCK = new Block({
+                number,
+                nonce,
+                data,
+                prevHash,
+                hash: cryptohash(number, nonce, data, prevHash)
+            });
+            blockchain.push(NEW_BLOCK);
+            let newBlock = document.createElement('div');
+            newBlock.innerHTML = block.innerHTML;
+            newBlock.classList.add('block');
+            newBlock.setAttribute('id', `${blockchain.length}`);
+            newBlock.querySelector('.number-sec input').value = blockchain[blockchain.length-1].number;
+            newBlock.querySelector('.nonce-sec input').value = blockchain[blockchain.length-1].nonce;
+            newBlock.querySelector('.data-sec textarea').value = blockchain[blockchain.length-1].data;
+            newBlock.querySelector('.prevHash-sec input').value = blockchain[blockchain.length-1].prevHash;
+            newBlock.querySelector('.hash-sec input').value = blockchain[blockchain.length-1].hash;
+
+            chain.appendChild(newBlock);
+        }
+    }
+    console.log("Genesis Block added to the blockchain");
+    blockchain.push(Block.genesis());
+    Blockchain.addBlock();
+    Blockchain.addBlock();
+    Blockchain.addBlock();
+    let dataset = document.querySelectorAll('.data-sec textarea');
+
+    let valid = e => {
+        let color = e.target.parentElement.parentElement.style.backgroundColor;
+        for(let i = e.target.parentElement.parentElement.id; i<blockchain.length; i++){
+            dataset[i].parentElement.parentElement.style.backgroundColor = color;
+        }
+    }
+
+    let update = e=>{
+        let currentBlock = blockchain[e.target.parentElement.parentElement.id-1];
+        console.log(cryptohash(currentBlock.number, currentBlock.nonce, e.target.value, currentBlock.prevHash));
+        currentBlock.hash = cryptohash(currentBlock.number, currentBlock.nonce, e.target.value, currentBlock.prevHash);
+        e.target.parentElement.parentElement.querySelector('.hash-sec input').value = currentBlock.hash;     
+    }
+
+    let check = (e) =>{
+        if(blockchain[e.target.parentElement.parentElement.id-1].data !== e.target.value){
+            e.target.parentElement.parentElement.style.backgroundColor = '#FFD4D4';
+            valid(e);
+        }
+        else{
+            e.target.parentElement.parentElement.style.backgroundColor = 'rgb(223, 240, 216)';
+            valid(e);
+        }
+        update(e);
+        console.log('event triggered');
+    }
+
+    dataset.forEach(data => data.addEventListener('input', check));
+    let mineButtons = document.querySelectorAll('.mine');
+
+    let mining = e =>{
+        let block_to_mine = e.target.parentElement;
+        blockchain[block_to_mine.id-1].prevHash = block_to_mine.id != 1 ? blockchain[block_to_mine.id-2].hash : '0'.repeat(64);
+        blockchain[block_to_mine.id-1].data = block_to_mine.querySelector('.data-sec textarea').value;
+        blockchain[block_to_mine.id-1].nonce = Block.randomNonce(blockchain[block_to_mine.id-1].number, blockchain[block_to_mine.id-1].data, blockchain[block_to_mine.id-1].prevHash);
+        blockchain[block_to_mine.id-1].hash = cryptohash(blockchain[block_to_mine.id-1].number, blockchain[block_to_mine.id-1].nonce, blockchain[block_to_mine.id-1].data, blockchain[block_to_mine.id-1].prevHash);
+        block_to_mine.querySelector('.nonce-sec input').value =  blockchain[block_to_mine.id-1].nonce;
+        block_to_mine.querySelector('.prevHash-sec input').value = blockchain[block_to_mine.id-1].prevHash;
+        block_to_mine.querySelector('.hash-sec input').value = blockchain[block_to_mine.id-1].hash;
+        block_to_mine.style.backgroundColor = 'rgb(223, 240, 216)';
+}
+    mineButtons.forEach(mine => mine.addEventListener('click', mining));
+
+    
+    
+});
+</script>
